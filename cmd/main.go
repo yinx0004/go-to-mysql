@@ -86,7 +86,7 @@ func main() {
 	app.log.Info().Msg("Start to insert data...")
 	for {
 		var wg sync.WaitGroup
-			wg.Add(cfg.concurrency)
+		wg.Add(cfg.concurrency)
 		for i := 0; i < cfg.concurrency; i++ {
 			go func(i int) {
 				err = app.db.Insert(cfg.dbName)
