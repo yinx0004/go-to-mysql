@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"go-to-mysql/internal/random"
 	"os"
 	"sync"
 	"time"
@@ -85,17 +86,29 @@ func main() {
 
 	app.log.Info().Msg("Start to insert data...")
 	for {
+		c1 := make(chan int, 50)
+		c2 := make(chan string, 50)
+		go func() {
+			for x := 0; x < cfg.concurrency; x++ {
+				c1 <- random.Integer(100000000)
+				c2 <- random.String(20)
+			}
+		}()
+
 		var wg sync.WaitGroup
 		wg.Add(cfg.concurrency)
 		for i := 0; i < cfg.concurrency; i++ {
 			go func(i int) {
-				err = app.db.Insert(cfg.dbName)
+				col1 := <-c1
+				col2 := <-c2
+				err = app.db.Insert(cfg.dbName, col1, col2)
 				if err != nil {
 					app.log.Error().Err(err).Msg("Insert failed.")
 				}
 				app.log.Debug().Int("goroutine", i).Msg("Insert Succeed.")
 				wg.Done()
 			}(i)
+			//time.Sleep(sleepTime)
 		}
 		wg.Wait()
 		app.log.Info().Msg("in progress...")
