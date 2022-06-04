@@ -23,6 +23,6 @@ func String(length int) string {
 	return StringWithCharset(length, charset)
 }
 
-func Int(length int) int {
+func Integer(length int) int {
 	return seededRand.Intn(length)
 }
