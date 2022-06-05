@@ -41,9 +41,9 @@ type application struct {
 	log zerolog.Logger
 }
 
-func main() {
-	var cfg config
+var cfg config
 
+func init() {
 	flag.StringVar(&cfg.dsn.host, "h", "localhost", "MySQL host")
 	flag.StringVar(&cfg.dsn.port, "P", "3306", "MySQL server port")
 	flag.StringVar(&cfg.dsn.user, "u", "root", "MySQL user")
@@ -52,6 +52,9 @@ func main() {
 	flag.IntVar(&cfg.concurrency, "c", 50, "Number of Goroutione")
 	flag.BoolVar(&cfg.debug, "debug", false, "show debug level log")
 	flag.StringVar(&cfg.dbName, "d", "", "MySQL database name")
+}
+
+func main() {
 	flag.Parse()
 
 	log.Info().Msg("Starting program...")
