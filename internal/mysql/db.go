@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"github.com/rs/zerolog/log"
 	"go-to-mysql/internal"
-	"go-to-mysql/internal/rand"
 	"time"
 )
 
@@ -19,6 +18,7 @@ type Conn struct {
 
 func (c Conn) CreateDB(dbName string) error {
 	stmt := "create database if not exists " + dbName
+	log.Debug().Str("create database stmt:", stmt).Msg("")
 	ctx, cancel := context.WithTimeout(context.Background(), stmtTimeout)
 	defer cancel()
 	if _, err := c.DB.ExecContext(ctx, stmt); err != nil {
@@ -37,11 +37,9 @@ func (c Conn) CreateTab(dbName string) error {
 	return nil
 }
 
-func (c Conn) Insert(dbName string) error {
+func (c Conn) Insert(dbName string, col1 int, col2 string) error {
 	funcName := internal.GetFuncName()
 	log.Debug().Str("func", funcName).Msg("")
-	col1 := rand.Int(100000000)
-	col2 := rand.String(20)
 	stmt := "insert into " + dbName + ".test_tab (id, col1, col2) values (0, ?, ?)"
 	if _, err := c.DB.Exec(stmt, col1, col2); err != nil {
 		return err
