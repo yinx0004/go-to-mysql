@@ -20,6 +20,7 @@ const (
 	pingTimeout = 5 * time.Second
 	connTimeout = 10 * time.Second
 	sleepTime   = 5 * time.Second
+	version     = "1.0.0"
 )
 
 type config struct {
@@ -52,10 +53,17 @@ func init() {
 	flag.IntVar(&cfg.concurrency, "c", 50, "Number of Goroutione")
 	flag.BoolVar(&cfg.debug, "debug", false, "show debug level log")
 	flag.StringVar(&cfg.dbName, "d", "", "MySQL database name")
+
 }
 
 func main() {
+	displayVersion := flag.Bool("version", false, "Display version and exit")
 	flag.Parse()
+
+	if *displayVersion {
+		fmt.Printf("Version: %s", version)
+		os.Exit(0)
+	}
 
 	log.Info().Msg("Starting program...")
 	dsn := getDSN(cfg)

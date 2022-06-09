@@ -38,6 +38,7 @@ func (c Conn) CreateTab(dbName string) error {
 }
 
 func (c Conn) Insert(dbName string, col1 int, col2 string) error {
+	defer internal.TimeTrack(time.Now())
 	funcName := internal.GetFuncName()
 	log.Debug().Str("func", funcName).Msg("")
 	stmt := "insert into " + dbName + ".test_tab (id, col1, col2) values (0, ?, ?)"

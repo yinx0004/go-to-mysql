@@ -3,6 +3,7 @@ package internal
 import (
 	"github.com/rs/zerolog/log"
 	"runtime"
+	"time"
 )
 
 func GetFuncName() string {
@@ -12,4 +13,9 @@ func GetFuncName() string {
 	}
 	funcName := runtime.FuncForPC(pc).Name()
 	return funcName
+}
+
+func TimeTrack(start time.Time) {
+	elapsed := time.Since(start)
+	log.Info().Stringer("Insert Response Time", elapsed).Msg("")
 }
