@@ -17,5 +17,5 @@ func GetFuncName() string {
 
 func TimeTrack(start time.Time) {
 	elapsed := time.Since(start)
-	log.Info().Stringer("Insert Response Time", elapsed).Msg("")
+	log.Info().Stringer("Response Time", elapsed).Msg("")
 }
