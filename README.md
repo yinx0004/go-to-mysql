@@ -1,17 +1,36 @@
 # go-to-mysql
 
 ## Description
+### Functions
 This tool will do the following things
 1. create connection pool to MySQL
-2. create database if not exists
-3. create table `test_tab` is not exists
-4. insert into `test_tab` with random values without query timeout
+2. execute different query in MySQL to help you diagnose issue in different mode
+
+
+### Mode
+#### HealthCheck mode
+Execute `show global variables like 'wsrep_node_name'` to return current active master host
+
+#### Write mode
+1. create database if not exists
+2. create table `test_tab` is not exists
+3. insert into `test_tab` with random values without query timeout
 ```
 create table test_tab (
     id int not null auto_increment primary key,
     col1 int not null, 
     col2 char(20) not null
     )
+```
+#### RW mode
+1. create database if not exists
+2. create table `test_tab` is not exists
+3. execute transaction with `insert` then `select`
+```
+begin;
+insert into dbName.test_tab (id, col1, col2) values (0, ?, ?);
+select col1, col2 from dbName.test_tab where id = ?;
+commit;
 ```
 
 ## How to build
