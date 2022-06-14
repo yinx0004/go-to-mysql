@@ -71,10 +71,10 @@ func main() {
 	dsn := getDSN(cfg)
 	conn, err := initDB(dsn)
 	if err != nil {
-		log.Fatal().Err(err).Msg("DB connection pool initialization failed.")
+		log.Fatal().Err(err).Msg("DB connection pool initialization failed")
 	}
 	defer conn.Close()
-	log.Info().Msg("DB connection pool initialized.")
+	log.Info().Msg("DB connection pool initialized")
 
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	if cfg.debug {
@@ -89,13 +89,20 @@ func main() {
 
 	app.log.With().Timestamp()
 
-	if err = app.db.CreateDB(cfg.dbName); err != nil {
-		app.log.Fatal().Err(err).Msg("Database init failed.")
+	if cfg.dbName == "" && cfg.mode != "HealthCheck" {
+		app.log.Warn().Str("mode", cfg.mode).Msg("Not supported when db name is not provided, will change to HealthCheck mode")
+		cfg.mode = "HealthCheck"
 	}
-	if err = app.db.CreateTab(cfg.dbName); err != nil {
-		app.log.Fatal().Err(err).Msg("Create test table failed.")
+
+	if cfg.mode == "Write" || cfg.mode == "RW" {
+		if err = app.db.CreateDB(cfg.dbName); err != nil {
+			app.log.Fatal().Err(err).Msg("Database init failed")
+		}
+		if err = app.db.CreateTab(cfg.dbName); err != nil {
+			app.log.Fatal().Err(err).Msg("Create test table failed")
+		}
+		app.log.Info().Msg("Database initialization complete")
 	}
-	app.log.Info().Msg("Database initialization complete.")
 
 	app.log.Info().Msg("Start to send query to MySQL...")
 	for {
@@ -132,12 +139,12 @@ func main() {
 					master, err = app.db.GetSysVar("wsrep_node_name")
 				}
 				if err != nil {
-					app.log.Error().Err(err).Str("mode", cfg.mode).Int("Goroutine", i).Msg("Failed.")
+					app.log.Error().Err(err).Str("mode", cfg.mode).Int("Goroutine", i).Msg("Failed")
 				} else {
 					if master != nil {
-						app.log.Info().Str("mode", cfg.mode).Int("Goroutine", i).Str("master", *master).Msg("Query Succeed.")
+						app.log.Info().Str("mode", cfg.mode).Int("Goroutine", i).Str("master", *master).Msg("Query Succeed")
 					} else {
-						app.log.Info().Str("mode", cfg.mode).Int("Goroutine", i).Msg("Query Succeed.")
+						app.log.Info().Str("mode", cfg.mode).Int("Goroutine", i).Msg("Query Succeed")
 					}
 				}
 				wg.Done()
