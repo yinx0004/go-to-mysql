@@ -19,14 +19,15 @@ import (
 const (
 	pingTimeout = 5 * time.Second
 	connTimeout = 10 * time.Second
-	sleepTime   = 5 * time.Second
-	version     = "1.0.0"
+	version     = "1.0.1"
 )
 
 type config struct {
 	concurrency int
 	debug       bool
 	dbName      string
+	sleep       time.Duration
+	mode        string
 	dsn         struct {
 		host      string
 		port      string
@@ -53,7 +54,8 @@ func init() {
 	flag.IntVar(&cfg.concurrency, "c", 50, "Number of Goroutione")
 	flag.BoolVar(&cfg.debug, "debug", false, "show debug level log")
 	flag.StringVar(&cfg.dbName, "d", "", "MySQL database name")
-
+	flag.DurationVar(&cfg.sleep, "sleep", 1*time.Second, "Sleep time, support time duration [s|m|h]")
+	flag.StringVar(&cfg.mode, "mode", "HealthCheck", "[HealthCheck|Read|Write|RW]")
 }
 
 func main() {
@@ -95,35 +97,54 @@ func main() {
 	}
 	app.log.Info().Msg("Database initialization complete.")
 
-	app.log.Info().Msg("Start to insert data...")
+	app.log.Info().Msg("Start to send query to MySQL...")
 	for {
-		c1 := make(chan int, 50)
-		c2 := make(chan string, 50)
-		go func() {
-			for x := 0; x < cfg.concurrency; x++ {
-				c1 <- random.Integer(100000000)
-				c2 <- random.String(20)
-			}
-		}()
-
+		c1 := make(chan int, cfg.concurrency)
+		c2 := make(chan string, cfg.concurrency)
+		if cfg.mode == "Write" || cfg.mode == "RW" {
+			go func() {
+				for x := 0; x < cfg.concurrency; x++ {
+					c1 <- random.Integer(100000000)
+					c2 <- random.String(20)
+				}
+			}()
+		}
 		var wg sync.WaitGroup
 		wg.Add(cfg.concurrency)
+
+		var master *string
 		for i := 0; i < cfg.concurrency; i++ {
 			go func(i int) {
-				col1 := <-c1
-				col2 := <-c2
-				err = app.db.Insert(cfg.dbName, col1, col2)
-				if err != nil {
-					app.log.Error().Err(err).Msg("Insert failed.")
+				switch cfg.mode {
+				case "HealthCheck":
+					master, err = app.db.GetSysVar("wsrep_node_name")
+				case "Write":
+					col1 := <-c1
+					col2 := <-c2
+					master, err = app.db.Insert(cfg.dbName, col1, col2)
+				case "RW":
+					col1 := <-c1
+					col2 := <-c2
+					master, err = app.db.Txn(cfg.dbName, col1, col2)
+				default:
+					app.log.Warn().Str("mode", cfg.mode).Msg("Unsupported mode, using HealthCheck")
+					cfg.mode = "HealthCheck"
+					master, err = app.db.GetSysVar("wsrep_node_name")
 				}
-				app.log.Debug().Int("goroutine", i).Msg("Insert Succeed.")
+				if err != nil {
+					app.log.Error().Err(err).Str("mode", cfg.mode).Int("Goroutine", i).Msg("Failed.")
+				} else {
+					if master != nil {
+						app.log.Info().Str("mode", cfg.mode).Int("Goroutine", i).Str("master", *master).Msg("Query Succeed.")
+					} else {
+						app.log.Info().Str("mode", cfg.mode).Int("Goroutine", i).Msg("Query Succeed.")
+					}
+				}
 				wg.Done()
 			}(i)
-			//time.Sleep(sleepTime)
 		}
 		wg.Wait()
-		app.log.Info().Msg("in progress...")
-		//time.Sleep(sleepTime)
+		time.Sleep(cfg.sleep)
 	}
 }
 
