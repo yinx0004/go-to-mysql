@@ -28,6 +28,7 @@ GOOS=linux GOARCH=amd64 go build -o go-to-mysql
 
 ## Usage
 ```
+./go-to-mysql --help
   -P string
         MySQL server port (default "3306")
   -T string
@@ -55,7 +56,7 @@ GOOS=linux GOARCH=amd64 go build -o go-to-mysql
 
 For example
 ```
-./go-to-mysql -h="202.81.116.204" -u="ops" -p="password" -d="db10" -c=1 -sleep=2s -mode="R" -debug
+./go-to-mysql -h="202.81.116.204" -u="ops" -p="password" -d="db10" -c=1 -sleep=2s -mode="RW" -debug
 ```
 > make sure your mysql account has create database, create table, select, insert privileges, 
 > and you need `super` privilege to get active **master hostname**
